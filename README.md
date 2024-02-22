@@ -74,40 +74,52 @@ VNC là viết tắt của Virtual Network Computing, là một hệ thống chi
 1. Viết Dockerfile
 
 ```docker
-# Sử dụng một base image
+# Sử dụng Ubuntu làm image cơ sở
 FROM ubuntu:latest
 
-# Cài đặt SSH server và các công cụ hỗ trợ
-RUN apt update && apt install -y openssh-server
+# Cài đặt các gói phần mềm cần thiết
+RUN apt update && apt install -y \
+    x11vnc \
+    xvfb \
+    fluxbox \
+    xterm \
+    openssh-server \
+&& apt-get clean
+# Tạo mật khẩu cho VNC
+RUN x11vnc -storepasswd 1234 /etc/x11vnc.pass
+
+# Khởi động SSH server
 RUN mkdir /var/run/sshd
 
-# Cấu hình SSH server
-RUN echo 'root:123456' | chpasswd
-RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+# Thiết lập một mật khẩu cho user root (root/root)
+RUN echo 'root:root' | chpasswd
 
-# Loại bỏ cảnh báo "Could not load host key"
-RUN ssh-keygen -A
+# Cấu hình SSH
+RUN sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+RUN sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
 # Mở cổng SSH
 EXPOSE 22
 
-# Khởi động SSH server khi container được khởi chạy
-CMD ["/usr/sbin/sshd", "-D"]
-```
+# Khởi động cả SSH và VNC server
+CMD ["sh", "-c", "service ssh start && x11vnc -forever -usepw -create"]
 
+```
+Sử dụng X11VNC
 1. Build với docker
 
 Sử dụng lệnh trong giao diện cmd tại thư mục chứa Dockerfile
 
 ```bash
-docker build -t test_vnc .
+docker build -t ubuntu-vnc .
 ```
 
 1. Chạy trong Docker Desktop
 
-Tìm image có tên test_vnc và khởi động 
+Tìm image có tên ubuntu-vnc và khởi động 
 
-![Untitled](Untitled%20be43c07c4ad54807a1cee2255068b07a/Untitled.png)
+![image](https://github.com/duyhehehe/KTPM/assets/112858967/c9fb94f1-8d7a-410d-ac33-4e84d7496a16)
+
 
 1. Cài đặt các package
 - Cài đặt Desktop Environment
@@ -120,87 +132,18 @@ apt install xfce4 xfce4-goodies
 
 Chọn lightdm
 
-- Cài đặt VNC server
+2. Khởi động contaner
 
-Sử dụng TigerVNC
-
+Chạy ở cổng 5900
 ```bash
-apt install tigervnc-standalone-server
+docker run -it -p 5900:5900 ubuntu-vnc
 ```
 
-Khởi động vncserver:
-
-```bash
-vncserver
-```
-
-Chọn mật khẩu
-
-```
-You will require a password to access your desktops.
-
-Password:
-Verify:
-```
-
-1. Cấu hình VNC server
-
-Hiện tại có một vnc server đang chạy trên cổng 5901, đầu tiên phải tắt nó .
-
-```bash
-vncserver -kill :1
-```
-
-Cài đặt trình soạn thảo, có thể sử dụng vim hoặc nano. Trong bài này sử dụng nano
-
-```bash
-apt install nano
-```
-
-Tạo mới tệp xstartup
-
-```bash
-nano ~/.vnc/xstartup
-```
-
-Dán đoạn text vào
-
-```
-#!/bin/sh
-
-# Start up the standard system desktop
-unset SESSION_MANAGER
-unset DBUS_SESSION_BUS_ADDRESS
-
-/usr/bin/startxfce4
-
-[ -x /etc/vnc/xstartup ] && exec /etc/vnc/xstartup
-[ -r $HOME/.Xresources ] && xrdb $HOME/.Xresources
-x-window-manager &
-```
-
-Để lưu lại, sử dụng tổ hợp phím Ctrl-O, Enter. Ctrl-X để thoát khỏi trình soạn thảo
-
-Cấp quyền khởi động cho tệp xstartup
-
-```bash
-chmod +x ~/.vnc/xstartup
-```
-
-Khởi động VNC server
-
-```bash
-vncserver -localhost no :1
-```
-
-1. Truy cập vào VNC server bằng VNC Viewer
+3. Truy cập vào VNC server bằng VNC Viewer
 
 Sử dụng ứng dụng RealVNC
 
-Container hiện tại đang được chạy với ip 172.17.0.3
 
-![Untitled](Untitled%20be43c07c4ad54807a1cee2255068b07a/Untitled%201.png)
+Sử dụng RealVNC, điền đường dẫn localhost:5900
 
-Sử dụng RealVNC, điền đường dẫn 172.17.0.3:5901
-
-![Untitled](Untitled%20be43c07c4ad54807a1cee2255068b07a/Untitled%202.png)
+![image](https://github.com/duyhehehe/KTPM/assets/112858967/b2d84441-5d3c-472c-bc73-054828b7f920)
