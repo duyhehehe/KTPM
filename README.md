@@ -77,10 +77,8 @@ VNC là viết tắt của Virtual Network Computing, là một hệ thống chi
 1. Viết Dockerfile
 
 ```docker
-# Sử dụng Ubuntu làm image cơ sở
-FROM ubuntu:latest
 
-# Cài đặt các gói phần mềm cần thiết
+
 FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND noninteractive
