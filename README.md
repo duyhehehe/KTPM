@@ -81,31 +81,37 @@ VNC là viết tắt của Virtual Network Computing, là một hệ thống chi
 FROM ubuntu:latest
 
 # Cài đặt các gói phần mềm cần thiết
-RUN apt update && apt install -y \
+FROM ubuntu:20.04
+
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN apt-get update && \
+    apt-get install -y \
+    openssh-server \
+    xfce4 \
+    xfce4-goodies \
+    tightvncserver \
+    xfonts-base \
     x11vnc \
     xvfb \
-    fluxbox \
-    xterm \
-    openssh-server \
-&& apt-get clean
-# Tạo mật khẩu cho VNC
-RUN x11vnc -storepasswd 1234 /etc/x11vnc.pass
+    firefox
 
-# Khởi động SSH server
-RUN mkdir /var/run/sshd
+RUN echo 'root:123456' | chpasswd && \
+    mkdir -p ~/.vnc && \
+    x11vnc -storepasswd 123456 ~/.vnc/passwd
 
-# Thiết lập một mật khẩu cho user root (root/root)
-RUN echo 'root:root' | chpasswd
+RUN echo '#!/bin/bash' >> /startup.sh && \
+    echo 'service ssh start' >> /startup.sh && \
+    echo 'mkdir -p ~/.vnc' >> /startup.sh && \
+    echo 'Xvfb :1 -screen 0 1024x768x16 & DISPLAY=:1.0 startxfce4 &' >> /startup.sh && \
+    echo 'x11vnc -display :1 -forever -passwd 123456 &' >> /startup.sh && \
+    echo 'sleep infinity' >> /startup.sh && \
+    chmod +x /startup.sh
 
-# Cấu hình SSH
-RUN sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
-RUN sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
-
-# Mở cổng SSH
 EXPOSE 22
+EXPOSE 5900
 
-# Khởi động cả SSH và VNC server
-CMD ["sh", "-c", "service ssh start && x11vnc -forever -usepw -create"]
+CMD ["/startup.sh"]
 
 ```
 Sử dụng X11VNC
@@ -117,29 +123,12 @@ Sử dụng lệnh trong giao diện cmd tại thư mục chứa Dockerfile
 docker build -t ubuntu-vnc .
 ```
 
-1. Chạy trong Docker Desktop
-
-Tìm image có tên ubuntu-vnc và khởi động 
-
-![image](https://github.com/duyhehehe/KTPM/assets/112858967/c9fb94f1-8d7a-410d-ac33-4e84d7496a16)
-
-
-1. Cài đặt các package
-- Cài đặt Desktop Environment
-
-Sử dụng xfce
-
-```bash
-apt install xfce4 xfce4-goodies
-```
-
-Chọn lightdm
 
 2. Khởi động contaner
 
 Chạy ở cổng 5900
 ```bash
-docker run -it -p 5900:5900 ubuntu-vnc
+docker run -d -p 2222:22 -p 5900:5900 --name ubuntu-vnc-container ubuntu-vnc
 ```
 
 3. Truy cập vào VNC server bằng VNC Viewer
@@ -148,5 +137,5 @@ Sử dụng ứng dụng RealVNC
 
 
 Sử dụng RealVNC, điền đường dẫn localhost:5900
+![image](https://github.com/duyhehehe/KTPM/assets/112858967/17ce3995-b031-48cc-83f1-f091687529f8)
 
-![image](https://github.com/duyhehehe/KTPM/assets/112858967/b2d84441-5d3c-472c-bc73-054828b7f920)
