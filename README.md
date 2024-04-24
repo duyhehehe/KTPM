@@ -137,5 +137,5 @@ Sử dụng ứng dụng RealVNC
 
 
 Sử dụng RealVNC, điền đường dẫn localhost:5900
-![image](https://github.com/duyhehehe/KTPM/assets/112858967/17ce3995-b031-48cc-83f1-f091687529f8)
+![image](https://github.com/duyhehehe/KTPM/assets/112858967/f64ca8f3-8d7c-41ec-b424-eb7cde24a094)
 
